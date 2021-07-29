@@ -1,4 +1,5 @@
 const http = require('http');
+const fs = require('fs');
 const HttpsRequester = require('./HttpsRequester');
 const sharp = require('sharp');
 const httpsRequester = new HttpsRequester(1000);
