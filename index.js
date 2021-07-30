@@ -86,7 +86,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.url === '/') {
-        return sendPlainText(res, 200, 'Use /XX-xxx.png where XX is the country code and xxx is the desired output width. Exmaple: /NL-128.png');
+        return sendPlainText(res, 200, 'Use /XX-xxx.png where XX is the country code and xxx is the desired output width (it\'s also optional: /XX.png uses 128). Exmaple: /NL-128.png');
     }
 
     const m = THA_REGEX.exec(req.url);
@@ -104,7 +104,7 @@ const server = http.createServer((req, res) => {
         }
 
         if (isNaN(size) || size <= 0 || size > ACTUAL_MAX_SIZE) {
-            return sendPlainText(res, 400, `invalid size, max size allowed is ${ACTUAL_MAX_SIZE}`);
+            return sendPlainText(res, 400, `invalid size, you may only pick a size between 1 and ${ACTUAL_MAX_SIZE}`);
         }
 
         return sendFlag(res, xx, size);
