@@ -57,7 +57,7 @@ if (DEFAULT_SIZE > ACTUAL_MAX_SIZE) {
 export let WEB_LISTEN_OPTIONS: WebListenOptions;
 const LISTEN_HOST = process.env.LISTEN_HOST ?? 'localhost';
 const LISTEN_CHMOD = process.env.LISTEN_CHMOD;
-getEnvNumberOrString('LISTEN', 3000, num => WEB_LISTEN_OPTIONS = { listen: num, host: LISTEN_HOST }, str => WEB_LISTEN_OPTIONS = { listen: str, host: LISTEN_CHMOD });
+getEnvNumberOrString('LISTEN', 3000, num => WEB_LISTEN_OPTIONS = { listen: num, host: LISTEN_HOST }, str => WEB_LISTEN_OPTIONS = { listen: str, chmod: LISTEN_CHMOD });
 
 export const REDIS_SOCKET = process.env.REDIS_SOCKET;
 export const REDIS_PORT = getEnvNumber('REDIS_PORT');
