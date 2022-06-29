@@ -3,21 +3,7 @@ import type { IncomingMessage, Server, ServerResponse } from 'http';
 import type CachedOsuFlagsFetcher from './CachedOsuFlagsFetcher';
 import { chmod } from 'fs/promises';
 import { createServer } from 'http';
-
-interface UnixSocketListenOptions {
-    listen: string;
-    chmod?: string;
-}
-interface TcpListenOptions {
-    listen: number;
-    host: string;
-}
-
-export type WebListenOptions = UnixSocketListenOptions | TcpListenOptions;
-
-function isTcpListenOptions(options: WebListenOptions): options is TcpListenOptions {
-    return typeof options.listen === 'number';
-}
+import type { WebListenOptions } from './config';
 
 export default class Web {
     private static readonly THA_REGEX = /^\/([A-Za-z]+)(?:-([0-9]+))?\.png$/;
@@ -135,7 +121,7 @@ export default class Web {
             this._server.once('error', errHandler);
 
             const o = this._listenOptions;
-            if (isTcpListenOptions(o)) {
+            if (o.isTcp) {
                 this._server.listen(o.listen, o.host, resolve);
             } else {
                 this._server.listen(o.listen, () => {

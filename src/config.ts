@@ -1,5 +1,18 @@
 import semver from 'semver';
-import type { WebListenOptions } from './Web';
+
+export interface UnixSocketListenOptions {
+    isTcp: false;
+    listen: string;
+    chmod?: string;
+}
+
+export interface TcpListenOptions {
+    isTcp: true;
+    listen: number;
+    host: string;
+}
+
+export type WebListenOptions = UnixSocketListenOptions | TcpListenOptions;
 
 // this is the node version I used during development, so lets just restrict runtime usage to that version to avoid unexpected problems lol
 const NODE_VERSION_TO_RUN = '^16.15.1';
@@ -16,21 +29,20 @@ function getEnvNumber(key: string, defaultValue?: number): number | undefined {
     return parsedValue ? parsedValue : defaultValue;
 }
 
-function getEnvNumberOrString(key: string, defaultValue: number | string, onNumber: (num: number) => void, onString: (str: string) => void): void {
+function getEnvNumberOrStringWithData<T>(key: string, defaultValue: number | string, onNumber: (num: number) => T, onString: (str: string) => T): T {
     var rawValue = process.env[key];
     if (!rawValue) {
         if (typeof defaultValue === 'number') {
-            onNumber(defaultValue);
+            return onNumber(defaultValue);
         } else {
-            onString(defaultValue);
+            return onString(defaultValue);
         }
-        return;
     }
     var parsedValue = parseInt(rawValue, 10);
     if (parsedValue) {
-        onNumber(parsedValue);
+        return onNumber(parsedValue);
     } else {
-        onString(rawValue);
+        return onString(rawValue);
     }
 }
 
@@ -54,10 +66,12 @@ if (DEFAULT_SIZE > ACTUAL_MAX_SIZE) {
     throw new Error(`default size (${DEFAULT_SIZE}) is greater than max allowed size (${ACTUAL_MAX_SIZE})`);
 }
 
-export let WEB_LISTEN_OPTIONS: WebListenOptions;
 const LISTEN_HOST = process.env.LISTEN_HOST ?? 'localhost';
 const LISTEN_CHMOD = process.env.LISTEN_CHMOD;
-getEnvNumberOrString('LISTEN', 3000, num => WEB_LISTEN_OPTIONS = { listen: num, host: LISTEN_HOST }, str => WEB_LISTEN_OPTIONS = { listen: str, chmod: LISTEN_CHMOD });
+export const WEB_LISTEN_OPTIONS = getEnvNumberOrStringWithData<WebListenOptions>('LISTEN', 3000,
+    num => ({ isTcp: true, listen: num, host: LISTEN_HOST }),
+    str => ({ isTcp: false, listen: str, chmod: LISTEN_CHMOD })
+);
 
 export const REDIS_SOCKET = process.env.REDIS_SOCKET;
 export const REDIS_PORT = getEnvNumber('REDIS_PORT');
