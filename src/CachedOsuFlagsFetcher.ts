@@ -62,8 +62,8 @@ export default class CachedOsuFlagsFetcher {
         });
     }
 
-    public connectToRedis(): Promise<void> {
-        return this._redisClient.connect();
+    public async connectToRedis(): Promise<void> {
+        await this._redisClient.connect();
     }
 
     public disconnectFromRedis(): Promise<void> {

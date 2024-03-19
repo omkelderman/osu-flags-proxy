@@ -15,7 +15,7 @@ export interface TcpListenOptions {
 export type WebListenOptions = UnixSocketListenOptions | TcpListenOptions;
 
 // this is the node version I used during development, so lets just restrict runtime usage to that version to avoid unexpected problems lol
-const NODE_VERSION_TO_RUN = '^16.15.1';
+const NODE_VERSION_TO_RUN = '^20.11.0';
 if (!semver.satisfies(process.version, NODE_VERSION_TO_RUN)) {
     throw new Error(`The current node version ${process.version} does not satisfy the required version ${NODE_VERSION_TO_RUN}.`);
 }
