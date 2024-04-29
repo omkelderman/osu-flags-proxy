@@ -1,9 +1,6 @@
 import type { RedisClientType, RedisModules, RedisFunctions } from '@redis/client';
-import type { Readable } from 'stream';
 
 import sharp from 'sharp';
-import https from 'https';
-import zlib from 'zlib';
 import { commandOptions, defineScript, createClient } from '@redis/client';
 const RETBUF = commandOptions({ returnBuffers: true });
 const EMPTY_BUF = Buffer.allocUnsafe(0);
@@ -102,82 +99,12 @@ export default class CachedOsuFlagsFetcher {
         return pngBuf;
     }
 
-    private _fetchOrNullOn404OrWrongContentType(url: string, expectedContentType: string): Promise<Buffer | null> {
-        return new Promise((resolve2, reject2) => {
-            let handled = false;
-            const resolve = (buf: Buffer | null) => {
-                if (handled) return;
-                handled = true;
-                resolve2(buf);
-            }
-            const reject = (err: Error) => {
-                if (handled) return;
-                handled = true;
-                reject2(err);
-            }
-
-            const req = https.get(url, {
-                timeout: this._httpRequestTimeout,
-                headers: {
-                    'Accept-Encoding': 'br, gzip, deflate'
-                }
-            });
-
-            req.once('error', err => reject(err));
-            req.once('response', res => {
-                if (res.statusCode === 404) {
-                    return resolve(null);
-                }
-
-                if (res.statusCode !== 200) {
-                    return reject(new Error(`Unexpected http response ${res.statusCode} ${res.statusMessage}`));
-                }
-
-                let contentType = res.headers['content-type'];
-                if (contentType != expectedContentType) {
-                    return resolve(null);
-                }
-
-                let readable: Readable;
-                let contentEncoding = res.headers['content-encoding'];
-                switch (contentEncoding) {
-                    case undefined:
-                        // no content encoding
-                        readable = res;
-                        break;
-                    case 'gzip':
-                        // gzip compression
-                        readable = res.pipe(zlib.createGunzip());
-                        break;
-                    case 'br':
-                        // brotli compression
-                        readable = res.pipe(zlib.createBrotliDecompress());
-                        break;
-                    case 'deflate':
-                        // deflate compression
-                        readable = res.pipe(zlib.createInflate());
-                        break;
-                    default:
-                        // unknown
-                        return reject(new Error(`unknown content encoding (${contentEncoding}) in api response`));
-                }
-
-                let totalDataLength = 0;
-                let chunks: Buffer[] = [];
-                readable.once('error', err => reject(err));
-                readable.once('end', () => {
-                    const data = Buffer.concat(chunks, totalDataLength);
-                    return resolve(data);
-                });
-                readable.on('data', chunk => {
-                    if (!Buffer.isBuffer(chunk)) {
-                        return;
-                    }
-                    totalDataLength += chunk.length;
-                    chunks.push(chunk);
-                });
-            });
-        });
+    private async _fetchOrNullOn404OrWrongContentType(url: string, expectedContentType: string): Promise<Buffer | null> {
+        const resp = await fetch(url, {signal: AbortSignal.timeout(this._httpRequestTimeout)});
+        if(resp.status == 404) return null;
+        if(resp.status != 200) throw new Error(`Unexpected http response ${resp.status} ${resp.statusText}`);
+        const arrayBuffer = await resp.arrayBuffer();
+        return Buffer.from(arrayBuffer);
     }
 
     private _buildPngFromSvg(svgBuf: Buffer, size: number): Promise<Buffer> {
